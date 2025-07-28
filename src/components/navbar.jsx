@@ -99,6 +99,22 @@ const Navbar = () => {
         setUnreadCount(0);
     };
 
+    const handleLogout = () => {
+        // Clear all authentication data from localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+
+        // Optional: Clear all localStorage data
+        // localStorage.clear();
+
+        // Navigate to login page
+        navigate('/login');
+
+        // Close profile dropdown
+        setProfileOpen(false);
+    };
+
     return (
         <header className="sticky top-0 z-50 w-full px-4 py-4 bg-transparent backdrop-blur-md">
 
@@ -193,9 +209,12 @@ const Navbar = () => {
                                 <NavLink to="/help" className="block w-full text-left px-4 py-2 hover:bg-gray-100">
                                     Help
                                 </NavLink>
-                                <NavLink to="/login" className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 border-t border-gray-200">
+                                <button
+                                    onClick={handleLogout}
+                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 border-t border-gray-200"
+                                >
                                     Log Out
-                                </NavLink>
+                                </button>
                             </div>
                         )}
                     </div>
