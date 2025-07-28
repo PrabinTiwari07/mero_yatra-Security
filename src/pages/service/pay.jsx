@@ -4,8 +4,8 @@ import { FaArrowLeft, FaCar, FaCheck, FaCreditCard, FaMoneyBillWave, FaTimes, Fa
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Navbar from '../../components/Navbar';
 import Footer from '../../components/footer';
+import Navbar from '../../components/navbar';
 
 const Pay = () => {
     const [paymentMethod, setPaymentMethod] = useState('');

@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { FaArrowRight, FaCog, FaGasPump, FaUsers } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../components/navbar';
 
 const Services = ({ showNavbar = true, standalone = true }) => {
     const [services, setServices] = useState([]);
