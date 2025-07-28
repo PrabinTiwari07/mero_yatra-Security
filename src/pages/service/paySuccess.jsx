@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from '../../components/footer';
-import Navbar from '../../components/Navbar';
+import Navbar from '../../components/navbar';
 
 const PaySuccess = () => {
     const [searchParams] = useSearchParams();
