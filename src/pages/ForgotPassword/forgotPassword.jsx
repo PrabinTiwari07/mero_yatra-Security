@@ -1,12 +1,19 @@
 import { useState } from 'react';
-import { FiArrowLeft } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { FiAlertTriangle, FiArrowLeft } from 'react-icons/fi';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState('');
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // Check if coming from expired password
+    const isExpired = location.state?.expired;
+    const prefilledEmail = location.state?.email || '';
+    const expiredMessage = location.state?.message;
+
+    const [email, setEmail] = useState(prefilledEmail);
     const [error, setError] = useState('');
     const [focusedFields, setFocusedFields] = useState({});
-    const navigate = useNavigate();
 
     const handleFocus = (fieldName) => {
         setFocusedFields({ ...focusedFields, [fieldName]: true });
@@ -59,11 +66,29 @@ const ForgotPassword = () => {
 
                 <div className="text-center mb-6 mt-8">
                     <img src="/assets/logo.png" alt="YatriK Logo" className="h-16 mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold mb-2 text-gray-900">Forgot Password</h2>
+                    <h2 className="text-2xl font-bold mb-2 text-gray-900">
+                        {isExpired ? 'Reset Expired Password' : 'Forgot Password'}
+                    </h2>
                     <p className="text-gray-600 text-sm">
-                        Please enter your email to reset your password
+                        {isExpired
+                            ? 'Your password has expired. Please reset it to continue.'
+                            : 'Please enter your email to reset your password'
+                        }
                     </p>
                 </div>
+
+                {/* Password Expired Warning */}
+                {isExpired && expiredMessage && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+                        <div className="flex items-center">
+                            <FiAlertTriangle className="h-5 w-5 mr-3 text-red-500" />
+                            <div>
+                                <p className="font-medium text-sm">Password Expired</p>
+                                <p className="text-sm mt-1">{expiredMessage}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Email Field with Floating Label */}

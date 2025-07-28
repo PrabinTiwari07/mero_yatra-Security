@@ -1,15 +1,40 @@
 import { useEffect, useState } from 'react';
-import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiClock, FiEye, FiEyeOff, FiShield } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSecurity } from '../../contexts/SecurityContext';
+import { showPasswordExpiredToast, showPasswordWarningToast } from '../../utils/passwordWarnings.jsx';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [focusedFields, setFocusedFields] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
     const location = useLocation();
     const navigate = useNavigate();
+
+    const {
+        recordFailedLogin,
+        clearFailedAttempts,
+        getRemainingAttempts,
+        isAccountLocked,
+        logSecurityEvent,
+        updateActivity,
+        isLoaded,
+        updateTick,
+        debugSecurityState
+    } = useSecurity();
+
+    // Debug: Log security state when email changes
+    useEffect(() => {
+        if (formData.email && isLoaded) {
+            console.log('Checking security for email:', formData.email);
+            debugSecurityState();
+            const lockStatus = isAccountLocked(formData.email);
+            console.log('Lock status:', lockStatus);
+        }
+    }, [formData.email, isLoaded, updateTick, debugSecurityState, isAccountLocked]);
 
     useEffect(() => {
         if (location.state?.success) {
@@ -46,7 +71,29 @@ const Login = () => {
             return;
         }
 
+        // Wait for security data to load
+        if (!isLoaded) {
+            toast.error('Loading security data, please wait...', { position: 'top-right' });
+            return;
+        }
+
+        // Check if account is locked
+        const lockStatus = isAccountLocked(formData.email);
+        if (lockStatus.locked) {
+            toast.error(`Account is locked. Try again in ${lockStatus.remainingTime} minutes.`, {
+                position: 'top-right'
+            });
+            logSecurityEvent('LOGIN_ATTEMPT_LOCKED_ACCOUNT', { email: formData.email });
+            return;
+        }
+
+        // Remove this duplicate warning - we'll show it only after failed attempts
+
+        setIsLoading(true);
+
         try {
+            logSecurityEvent('LOGIN_ATTEMPT', { email: formData.email });
+
             const res = await fetch('http://localhost:3000/api/users/login', {
                 method: 'POST',
                 headers: {
@@ -58,14 +105,74 @@ const Login = () => {
             const data = await res.json();
 
             if (!res.ok) {
-                toast.error(data.message || 'Login failed', { position: 'top-right' });
+                // Handle password expiry cases first
+                if (data.passwordExpired || data.mustChangePassword) {
+                    logSecurityEvent('LOGIN_BLOCKED_PASSWORD_EXPIRED', {
+                        email: formData.email,
+                        reason: data.message
+                    });
+
+                    showPasswordExpiredToast(
+                        data.message,
+                        () => navigate('/forgot-password', {
+                            state: {
+                                message: data.message,
+                                email: formData.email,
+                                expired: true
+                            }
+                        })
+                    );
+                    return;
+                }
+
+                // Record failed login attempt and check remaining attempts BEFORE recording
+                const currentRemaining = getRemainingAttempts(formData.email);
+                const accountLocked = recordFailedLogin(formData.email);
+
+                logSecurityEvent('LOGIN_FAILED', {
+                    email: formData.email,
+                    reason: data.message || 'Invalid credentials',
+                    accountLocked
+                });
+
+                if (accountLocked) {
+                    toast.error('Too many failed attempts. Account has been locked for 5 minutes.', {
+                        position: 'top-right'
+                    });
+                } else {
+                    const remaining = currentRemaining - 1; // Subtract 1 because we just failed
+                    toast.error(
+                        `${data.message || 'Login failed'}. ${remaining} attempts remaining.`,
+                        { position: 'top-right' }
+                    );
+                }
                 return;
             }
+
+            // Successful login - clear failed attempts
+            clearFailedAttempts(formData.email);
+            updateActivity();
+
+            logSecurityEvent('LOGIN_SUCCESS', {
+                email: formData.email,
+                role: data.user?.role
+            });
 
             // Save token and role
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
             localStorage.setItem('userRole', data.user?.role || 'user');
+
+            // Check for password warnings
+            if (data.passwordWarning) {
+                // Show password warning toast after successful login
+                setTimeout(() => {
+                    showPasswordWarningToast(
+                        data.passwordWarning,
+                        () => navigate('/change-password')
+                    );
+                }, 2000); // Show after success message
+            }
 
             toast.success('Login successful!', { position: 'top-right' });
             setTimeout(() => {
@@ -77,7 +184,13 @@ const Login = () => {
             }, 1000);
         } catch (err) {
             console.error(err);
+            logSecurityEvent('LOGIN_ERROR', {
+                email: formData.email,
+                error: err.message
+            });
             toast.error('Server error. Try again later.', { position: 'top-right' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -161,12 +274,50 @@ const Login = () => {
                             </Link>
                         </div>
 
+                        {/* Security Status Indicator */}
+                        {formData.email && isLoaded && (
+                            <div className="w-full">
+                                {(() => {
+                                    const lockStatus = isAccountLocked(formData.email);
+                                    const remainingAttempts = getRemainingAttempts(formData.email);
+
+                                    if (lockStatus.locked) {
+                                        return (
+                                            <div className="flex items-center justify-center p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                <FiShield className="text-red-500 mr-2" />
+                                                <span className="text-sm text-red-700">
+                                                    Account locked for {lockStatus.remainingTime} minutes
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (remainingAttempts < 5 && remainingAttempts > 0) {
+                                        return (
+                                            <div className="flex items-center justify-center p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                                <FiClock className="text-yellow-500 mr-2" />
+                                                <span className="text-sm text-yellow-700">
+                                                    {remainingAttempts} login attempts remaining before account lockout
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+
+                                    return null;
+                                })()}
+                            </div>
+                        )}
+
                         <div className="flex justify-center">
                             <button
                                 type="submit"
-                                className="w-48 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
+                                disabled={isLoading || !isLoaded || (formData.email && isAccountLocked(formData.email).locked)}
+                                className={`w-48 py-3 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${isLoading || !isLoaded || (formData.email && isAccountLocked(formData.email).locked)
+                                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                                    : 'bg-black text-white hover:bg-gray-900 transform hover:scale-[1.02]'
+                                    }`}
                             >
-                                Sign In
+                                {isLoading ? 'Signing In...' : !isLoaded ? 'Loading...' : 'Sign In'}
                             </button>
                         </div>
                     </form>

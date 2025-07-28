@@ -1,8 +1,16 @@
-import { useState } from 'react';
-import { FiEye, FiEyeOff } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiCheck, FiEye, FiEyeOff, FiX } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import {
+    assessPasswordStrength,
+    calculatePasswordEntropy,
+    getPasswordSuggestions,
+    getTimeToCrack,
+    PASSWORD_POLICY,
+    validatePassword
+} from '../../utils/passwordSecurity';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -16,7 +24,40 @@ const Register = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [focusedFields, setFocusedFields] = useState({});
+    const [passwordStrength, setPasswordStrength] = useState({
+        score: 0,
+        feedback: '',
+        checks: {
+            length: false,
+            uppercase: false,
+            lowercase: false,
+            number: false,
+            special: false,
+            noRepeating: false
+        }
+    });
+    const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
     const navigate = useNavigate();
+
+    // Update password strength when password changes
+    useEffect(() => {
+        if (formData.password) {
+            setPasswordStrength(assessPasswordStrength(formData.password));
+        } else {
+            setPasswordStrength({
+                score: 0,
+                feedback: '',
+                checks: {
+                    length: false,
+                    uppercase: false,
+                    lowercase: false,
+                    number: false,
+                    special: false,
+                    noRepeating: false
+                }
+            });
+        }
+    }, [formData.password]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,8 +85,21 @@ const Register = () => {
             return;
         }
 
+        // Validate password against policy
+        const passwordErrors = validatePassword(password);
+        if (passwordErrors.length > 0) {
+            toast.error(passwordErrors[0], { position: 'top-right' });
+            return;
+        }
+
         if (password !== confirmPassword) {
             toast.error('Passwords do not match.', { position: 'top-right' });
+            return;
+        }
+
+        // Check password strength
+        if (passwordStrength.score < 4) {
+            toast.error('Password is too weak. Please choose a stronger password.', { position: 'top-right' });
             return;
         }
 
@@ -206,8 +260,14 @@ const Register = () => {
                                 name="password"
                                 value={formData.password}
                                 onChange={handleChange}
-                                onFocus={() => handleFocus('password')}
-                                onBlur={() => handleBlur('password')}
+                                onFocus={() => {
+                                    handleFocus('password');
+                                    setShowPasswordRequirements(true);
+                                }}
+                                onBlur={() => {
+                                    handleBlur('password');
+                                    setShowPasswordRequirements(false);
+                                }}
                                 className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent transition-all peer"
                                 placeholder=" "
                                 id="password"
@@ -230,6 +290,84 @@ const Register = () => {
                                 {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                             </div>
                         </div>
+
+                        {/* Password Strength Indicator */}
+                        {formData.password && (
+                            <div className="mt-2">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-gray-600">Password Strength:</span>
+                                    <span className={`text-sm font-medium ${passwordStrength.strengthLevel === 'very-weak' ? 'text-red-600' :
+                                            passwordStrength.strengthLevel === 'weak' ? 'text-red-500' :
+                                                passwordStrength.strengthLevel === 'moderate' ? 'text-yellow-500' :
+                                                    passwordStrength.strengthLevel === 'strong' ? 'text-green-500' :
+                                                        'text-green-600'
+                                        }`}>
+                                        {passwordStrength.feedback}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                    <div
+                                        className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.strengthLevel === 'very-weak' ? 'bg-red-600 w-1/6' :
+                                                passwordStrength.strengthLevel === 'weak' ? 'bg-red-500 w-2/6' :
+                                                    passwordStrength.strengthLevel === 'moderate' ? 'bg-yellow-500 w-3/6' :
+                                                        passwordStrength.strengthLevel === 'strong' ? 'bg-green-500 w-5/6' :
+                                                            'bg-green-600 w-full'
+                                            }`}
+                                    ></div>
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-500">
+                                    <span>Entropy: {Math.round(calculatePasswordEntropy(formData.password))} bits</span>
+                                    <span>Time to crack: {getTimeToCrack(formData.password)}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Password Requirements */}
+                        {(showPasswordRequirements || formData.password) && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">Password Requirements:</h4>
+                                <div className="space-y-1">
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.length ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.length ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        {PASSWORD_POLICY.minLength}-{PASSWORD_POLICY.maxLength} characters long
+                                    </div>
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.uppercase ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.uppercase ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        At least one uppercase letter
+                                    </div>
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.lowercase ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.lowercase ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        At least one lowercase letter
+                                    </div>
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.number ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.number ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        At least one number
+                                    </div>
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.special ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.special ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        At least one special character (!@#$%^&*...)
+                                    </div>
+                                    <div className={`flex items-center text-xs ${passwordStrength.checks.noRepeating ? 'text-green-600' : 'text-gray-500'}`}>
+                                        {passwordStrength.checks.noRepeating ? <FiCheck className="mr-2" /> : <FiX className="mr-2" />}
+                                        No more than {PASSWORD_POLICY.maxRepeatingChars} consecutive identical characters
+                                    </div>
+                                </div>
+
+                                {/* Password Suggestions */}
+                                {formData.password && passwordStrength.score < 6 && (
+                                    <div className="mt-3 pt-3 border-t border-gray-200">
+                                        <h5 className="text-xs font-medium text-gray-600 mb-1">Suggestions to improve:</h5>
+                                        <div className="space-y-1">
+                                            {getPasswordSuggestions(passwordStrength).map((suggestion, index) => (
+                                                <div key={index} className="text-xs text-blue-600">
+                                                    • {suggestion}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Confirm Password Field */}
                         <div className="relative">
@@ -262,6 +400,20 @@ const Register = () => {
                                 {showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
                             </div>
                         </div>
+
+                        {/* Password Match Indicator */}
+                        {formData.confirmPassword && (
+                            <div className="mt-2">
+                                <div className={`flex items-center text-sm ${formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-500'
+                                    }`}>
+                                    {formData.password === formData.confirmPassword ? (
+                                        <><FiCheck className="mr-2" /> Passwords match</>
+                                    ) : (
+                                        <><FiX className="mr-2" /> Passwords do not match</>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-center">
                             <button
                                 type="submit"
