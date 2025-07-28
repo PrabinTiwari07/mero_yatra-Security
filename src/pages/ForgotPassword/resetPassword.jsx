@@ -1,0 +1,193 @@
+import { useState } from 'react';
+import { FiArrowLeft, FiEye, FiEyeOff } from 'react-icons/fi';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+const ResetPassword = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const email = location.state?.email;
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [focusedFields, setFocusedFields] = useState({});
+
+    const handleFocus = (fieldName) => {
+        setFocusedFields({ ...focusedFields, [fieldName]: true });
+    };
+
+    const handleBlur = (fieldName) => {
+        setFocusedFields({ ...focusedFields, [fieldName]: false });
+    };
+
+    const isLabelFloated = (fieldName) => {
+        const value = fieldName === 'newPassword' ? newPassword : confirmPassword;
+        return value || focusedFields[fieldName];
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!newPassword || !confirmPassword) {
+            toast.error('All fields are required.', { position: 'top-right' });
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error('Passwords do not match.', { position: 'top-right' });
+            return;
+        }
+
+        if (!email) {
+            toast.error('Something went wrong. Email not found in state.', { position: 'top-right' });
+            return;
+        }
+
+        try {
+            const res = await fetch('http://localhost:3000/api/users/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, newPassword, confirmPassword }),
+            });
+
+            const contentType = res.headers.get('content-type');
+            let data;
+
+            if (contentType && contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                data = { message: await res.text() };
+            }
+
+            if (!res.ok) throw new Error(data.message);
+
+            // toast.success('Password reset successful!', { position: 'top-right' });
+            setTimeout(() => {
+                navigate('/login', {
+                    state: { success: 'Password reset successful! Please log in.' },
+                });
+            }, 1500);
+
+        } catch (err) {
+            toast.error(err.message || 'Something went wrong.', { position: 'top-right' });
+        }
+    };
+
+    return (
+        <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 relative px-4 py-6">
+            <ToastContainer />
+
+            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md relative">
+                {/* Back Button Inside Container */}
+                <Link
+                    to="/verify-reset-otp"
+                    state={{ email }}
+                    className="absolute top-6 left-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                    <FiArrowLeft size={18} />
+                    <span className="text-sm font-medium">Back</span>
+                </Link>
+
+                <div className="text-center mb-6 mt-8">
+                    <img src="/assets/logo.png" alt="YatriK Logo" className="h-16 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold mb-2 text-gray-900">Reset Your Password</h2>
+                    <p className="text-gray-600 text-sm">
+                        Please enter and confirm your new password
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* New Password Field with Floating Label */}
+                    <div className="relative">
+                        <input
+                            type={showNew ? 'text' : 'password'}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            onFocus={() => handleFocus('newPassword')}
+                            onBlur={() => handleBlur('newPassword')}
+                            className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent transition-all peer"
+                            placeholder=" "
+                            id="newPassword"
+                        />
+                        <label
+                            htmlFor="newPassword"
+                            className="absolute left-3 bg-gray-50 px-1 text-gray-500 transition-all duration-200 pointer-events-none"
+                            style={{
+                                top: isLabelFloated('newPassword') ? '-8px' : '12px',
+                                fontSize: isLabelFloated('newPassword') ? '12px' : '16px',
+                                color: isLabelFloated('newPassword') ? '#374151' : '#6B7280'
+                            }}
+                        >
+                            New Password
+                        </label>
+                        <button
+                            type="button"
+                            className="absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                            onClick={() => setShowNew(!showNew)}
+                            tabIndex={-1}
+                        >
+                            {showNew ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                        </button>
+                    </div>
+
+                    {/* Confirm Password Field with Floating Label */}
+                    <div className="relative">
+                        <input
+                            type={showConfirm ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onFocus={() => handleFocus('confirmPassword')}
+                            onBlur={() => handleBlur('confirmPassword')}
+                            className="w-full px-4 py-3 pr-12 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent transition-all peer"
+                            placeholder=" "
+                            id="confirmPassword"
+                        />
+                        <label
+                            htmlFor="confirmPassword"
+                            className="absolute left-3 bg-gray-50 px-1 text-gray-500 transition-all duration-200 pointer-events-none"
+                            style={{
+                                top: isLabelFloated('confirmPassword') ? '-8px' : '12px',
+                                fontSize: isLabelFloated('confirmPassword') ? '12px' : '16px',
+                                color: isLabelFloated('confirmPassword') ? '#374151' : '#6B7280'
+                            }}
+                        >
+                            Confirm Password
+                        </label>
+                        <button
+                            type="button"
+                            className="absolute top-1/2 right-4 transform -translate-y-1/2 cursor-pointer text-gray-400 hover:text-gray-600"
+                            onClick={() => setShowConfirm(!showConfirm)}
+                            tabIndex={-1}
+                        >
+                            {showConfirm ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                        </button>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            type="submit"
+                            className="w-48 bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
+                        >
+                            Reset Password
+                        </button>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/verify-reset-otp', { state: { email } })}
+                            className="w-48 bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default ResetPassword;
