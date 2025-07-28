@@ -110,7 +110,7 @@ const Navbar = () => {
                         alt="Logo"
                         className="h-12 w-12 bg-white p-1 rounded-full object-cover shadow-md"
                     />
-                    <span className="font-bold text-xl hidden sm:block">YatriK</span>
+                    <span className="font-bold text-xl hidden sm:block">MeroYatra</span>
                 </div>
 
                 {/* Desktop Navigation */}

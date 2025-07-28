@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -9,6 +9,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [focusedFields, setFocusedFields] = useState({});
     const location = useLocation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (location.state?.success) {
@@ -67,12 +68,11 @@ const Login = () => {
             localStorage.setItem('userRole', data.user?.role || 'user');
 
             toast.success('Login successful!', { position: 'top-right' });
-
             setTimeout(() => {
                 if (data.user?.role === 'admin') {
-                    window.location.href = '/admin/dashboard';
+                    navigate('/admin/dashboard');
                 } else {
-                    window.location.href = '/home';
+                    navigate('/home');
                 }
             }, 1000);
         } catch (err) {
