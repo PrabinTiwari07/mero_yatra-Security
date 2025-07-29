@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { FiCheck, FiEye, FiEyeOff, FiX } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
@@ -39,6 +40,7 @@ const Register = () => {
         }
     });
     const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+    const [captchaValue, setCaptchaValue] = useState(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -155,13 +157,18 @@ const Register = () => {
             return;
         }
 
+        if (!captchaValue) {
+            toast.error('Please verify that you are not a robot.', { position: 'top-right' });
+            return;
+        }
+
         try {
             const res = await fetch('http://localhost:3000/api/users/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ fullName, phone, address, email, password, confirmPassword }),
+                body: JSON.stringify({ fullName, phone, address, email, password, confirmPassword, captchaToken: captchaValue }),
             });
 
             const data = await res.json();
@@ -462,6 +469,15 @@ const Register = () => {
                                 </div>
                             </div>
                         )}
+
+                        {/* reCAPTCHA Widget */}
+                        <div className="flex justify-center my-4">
+                            <ReCAPTCHA
+                                sitekey="6LfKjpMrAAAAAH5D2XQ2StoHV3Us67hh8SEwMJZP"
+                                onChange={setCaptchaValue}
+                            />
+                        </div>
+
                         <div className="flex justify-center">
                             <button
                                 type="submit"
