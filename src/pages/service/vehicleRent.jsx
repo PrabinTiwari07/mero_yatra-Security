@@ -30,13 +30,14 @@ const VehicleRent = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Get selected vehicle from navigation state
     useEffect(() => {
         if (location.state?.selectedVehicle) {
             setSelectedVehicle(location.state.selectedVehicle);
         }
     }, [location.state]);
 
-    // Calculating total days and price
+    // Calculate total days and price
     useEffect(() => {
         if (pickupDate && dropoffDate) {
             const start = dayjs(pickupDate);
@@ -47,7 +48,7 @@ const VehicleRent = () => {
 
             if (selectedVehicle?.price) {
                 let basePrice = selectedVehicle.price * calculatedDays;
-                // driver cost if selected 
+                // Add driver cost if selected (assuming 500 per day for driver)
                 if (includeDriver) {
                     basePrice += 500 * calculatedDays;
                 }
@@ -113,6 +114,7 @@ const VehicleRent = () => {
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen flex flex-col">
             <Navbar />
 
+            {/* Back button only */}
             <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4">
                 <div className="flex justify-between items-center">
                     <button
