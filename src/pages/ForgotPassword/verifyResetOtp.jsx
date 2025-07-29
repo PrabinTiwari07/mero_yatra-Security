@@ -40,7 +40,7 @@ const VerifyResetOtp = () => {
         setIsResending(true);
         try {
             // Use forgot-password endpoint instead of resend-otp for password reset scenarios
-            const res = await fetch('http://localhost:3000/api/users/forgot-password', {
+            const res = await fetch('/api/users/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -83,7 +83,7 @@ const VerifyResetOtp = () => {
         }
 
         try {
-            const res = await fetch('http://localhost:3000/api/users/verify-reset-otp', {
+            const res = await fetch('/api/users/verify-reset-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp: finalOtp }),

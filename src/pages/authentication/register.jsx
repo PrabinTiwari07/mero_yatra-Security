@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { FiCheck, FiEye, FiEyeOff, FiX } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
@@ -21,6 +22,7 @@ const Register = () => {
         password: '',
         confirmPassword: '',
     });
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [focusedFields, setFocusedFields] = useState({});
@@ -39,7 +41,6 @@ const Register = () => {
     const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
     const navigate = useNavigate();
 
-    // Update password strength when password changes
     useEffect(() => {
         if (formData.password) {
             setPasswordStrength(assessPasswordStrength(formData.password));
@@ -60,8 +61,55 @@ const Register = () => {
     }, [formData.password]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        const restrictFields = ['fullName', 'address', 'phone', 'email', 'password', 'confirmPassword'];
+        let cleanedValue = value;
+        let warningShown = false;
+
+        if (restrictFields.includes(name)) {
+            // Block <script> and </script>
+            const scriptTagPattern = /<\/?script.*?>/gi;
+            if (scriptTagPattern.test(cleanedValue)) {
+                cleanedValue = cleanedValue.replace(scriptTagPattern, '');
+                warningShown = true;
+            }
+
+            // Block < and > individually
+            const angleBracketPattern = /[<>]/g;
+            if (angleBracketPattern.test(cleanedValue)) {
+                cleanedValue = cleanedValue.replace(angleBracketPattern, '');
+                warningShown = true;
+            }
+
+            // Remove trailing /
+            if (cleanedValue.endsWith('/')) {
+                cleanedValue = cleanedValue.slice(0, -1);
+            }
+
+            // Show a single toast message if anything was removed
+            if (warningShown) {
+                toast.warn('Invalid characters (e.g., <, >, script tags) have been removed.', {
+                    position: 'top-right',
+                    autoClose: 3000,
+                    pauseOnHover: false,
+                    draggable: false,
+                    closeOnClick: true,
+                    theme: 'light'
+                });
+            }
+        }
+
+        const sanitizedValue = DOMPurify.sanitize(cleanedValue);
+
+        setFormData((prevFormData) => ({
+            ...prevFormData,
+            [name]: sanitizedValue
+        }));
     };
+
+
+
 
     const handleFocus = (fieldName) => {
         setFocusedFields({ ...focusedFields, [fieldName]: true });
@@ -78,14 +126,19 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const { fullName, phone, address, email, password, confirmPassword } = formData;
+        // Sanitize user input
+        const fullName = DOMPurify.sanitize(formData.fullName);
+        const phone = DOMPurify.sanitize(formData.phone);
+        const address = DOMPurify.sanitize(formData.address);
+        const email = DOMPurify.sanitize(formData.email);
+        const password = formData.password;
+        const confirmPassword = formData.confirmPassword;
 
         if (!fullName || !phone || !address || !email || !password || !confirmPassword) {
             toast.error('All fields are required.', { position: 'top-right' });
             return;
         }
 
-        // Validate password against policy
         const passwordErrors = validatePassword(password);
         if (passwordErrors.length > 0) {
             toast.error(passwordErrors[0], { position: 'top-right' });
@@ -97,7 +150,6 @@ const Register = () => {
             return;
         }
 
-        // Check password strength
         if (passwordStrength.score < 4) {
             toast.error('Password is too weak. Please choose a stronger password.', { position: 'top-right' });
             return;
@@ -109,7 +161,7 @@ const Register = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ fullName, phone, address, email, password, confirmPassword }),
             });
 
             const data = await res.json();
@@ -119,14 +171,10 @@ const Register = () => {
                 return;
             }
 
-            // toast.success('Registered successfully! Please verify OTP.', {
-            //   position: 'top-right',
-            // });
-
             setTimeout(() => {
                 navigate('/verify-otp', {
                     state: {
-                        email: formData.email,
+                        email,
                         success: 'Registered successfully! Please verify OTP.',
                     },
                 });
@@ -297,10 +345,10 @@ const Register = () => {
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm text-gray-600">Password Strength:</span>
                                     <span className={`text-sm font-medium ${passwordStrength.strengthLevel === 'very-weak' ? 'text-red-600' :
-                                            passwordStrength.strengthLevel === 'weak' ? 'text-red-500' :
-                                                passwordStrength.strengthLevel === 'moderate' ? 'text-yellow-500' :
-                                                    passwordStrength.strengthLevel === 'strong' ? 'text-green-500' :
-                                                        'text-green-600'
+                                        passwordStrength.strengthLevel === 'weak' ? 'text-red-500' :
+                                            passwordStrength.strengthLevel === 'moderate' ? 'text-yellow-500' :
+                                                passwordStrength.strengthLevel === 'strong' ? 'text-green-500' :
+                                                    'text-green-600'
                                         }`}>
                                         {passwordStrength.feedback}
                                     </span>
@@ -308,10 +356,10 @@ const Register = () => {
                                 <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                                     <div
                                         className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.strengthLevel === 'very-weak' ? 'bg-red-600 w-1/6' :
-                                                passwordStrength.strengthLevel === 'weak' ? 'bg-red-500 w-2/6' :
-                                                    passwordStrength.strengthLevel === 'moderate' ? 'bg-yellow-500 w-3/6' :
-                                                        passwordStrength.strengthLevel === 'strong' ? 'bg-green-500 w-5/6' :
-                                                            'bg-green-600 w-full'
+                                            passwordStrength.strengthLevel === 'weak' ? 'bg-red-500 w-2/6' :
+                                                passwordStrength.strengthLevel === 'moderate' ? 'bg-yellow-500 w-3/6' :
+                                                    passwordStrength.strengthLevel === 'strong' ? 'bg-green-500 w-5/6' :
+                                                        'bg-green-600 w-full'
                                             }`}
                                     ></div>
                                 </div>
@@ -422,6 +470,8 @@ const Register = () => {
                                 Create Account
                             </button>
                         </div>
+
+
                     </form>
 
                     <div className="mt-6 text-center">

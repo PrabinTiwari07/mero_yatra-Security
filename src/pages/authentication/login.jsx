@@ -21,20 +21,8 @@ const Login = () => {
         isAccountLocked,
         logSecurityEvent,
         updateActivity,
-        isLoaded,
-        updateTick,
-        debugSecurityState
+        isLoaded
     } = useSecurity();
-
-    // Debug: Log security state when email changes
-    useEffect(() => {
-        if (formData.email && isLoaded) {
-            console.log('Checking security for email:', formData.email);
-            debugSecurityState();
-            const lockStatus = isAccountLocked(formData.email);
-            console.log('Lock status:', lockStatus);
-        }
-    }, [formData.email, isLoaded, updateTick, debugSecurityState, isAccountLocked]);
 
     useEffect(() => {
         if (location.state?.success) {
