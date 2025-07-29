@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Footer from '../../components/footer';
 import Navbar from '../../components/navbar';
+import httpClient from '../../utils/httpClient';
 
 const PaySuccess = () => {
     const [searchParams] = useSearchParams();
@@ -29,22 +30,14 @@ const PaySuccess = () => {
         try {
             console.log('🔍 Verifying vehicle rental payment with pidx:', pidx);
 
-            const response = await fetch('http://localhost:3000/api/payment/verify', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ pidx })
-            });
+            const response = await httpClient.post('http://localhost:3000/api/payment/verify', { pidx });
 
-            const result = await response.json();
-            console.log('✅ Vehicle rental verification result:', result);
+            console.log('✅ Vehicle rental verification result:', response.data);
 
-            if (result.success && result.status === 'Completed') {
-                setPaymentData(result.payment_data);
+            if (response.data.success && response.data.status === 'Completed') {
+                setPaymentData(response.data.payment_data);
 
-                const bookingSaved = await completeVehicleBooking(result.payment_data);
+                const bookingSaved = await completeVehicleBooking(response.data.payment_data);
 
                 if (bookingSaved) {
                     setPaymentStatus('success');
@@ -74,44 +67,36 @@ const PaySuccess = () => {
             console.log('📋 Completing vehicle booking with payment data:', paymentData);
             console.log('📋 Vehicle booking details:', pendingBooking);
 
-            const bookingResponse = await fetch('http://localhost:3000/api/services/vehicle-booking', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json',
+            const bookingResponse = await httpClient.post('http://localhost:3000/api/services/vehicle-booking', {
+                vehicle: pendingBooking.vehicle._id,
+                vehicleName: pendingBooking.vehicle.name,
+                pickupLocation: pendingBooking.pickupLocation,
+                dropoffLocation: pendingBooking.dropoffLocation,
+                pickupCoords: pendingBooking.pickupCoords,
+                dropoffCoords: pendingBooking.dropoffCoords,
+                pickupDate: pendingBooking.pickupDate,
+                dropoffDate: pendingBooking.dropoffDate,
+                pickupTime: pendingBooking.pickupTime,
+                dropoffTime: pendingBooking.dropoffTime,
+                totalDays: pendingBooking.totalDays,
+                includeDriver: pendingBooking.includeDriver,
+                totalPrice: pendingBooking.totalPrice,
+                rentalType: pendingBooking.rentalType,
+                paymentMethod: 'khalti',
+                paymentStatus: 'paid',
+                paymentInfo: {
+                    pidx: paymentData.pidx || pidx,
+                    transactionId: paymentData.transaction_id,
+                    amount: paymentData.total_amount,
+                    status: 'Paid',
+                    paidAt: new Date().toISOString()
                 },
-                body: JSON.stringify({
-                    vehicle: pendingBooking.vehicle._id,
-                    vehicleName: pendingBooking.vehicle.name,
-                    pickupLocation: pendingBooking.pickupLocation,
-                    dropoffLocation: pendingBooking.dropoffLocation,
-                    pickupCoords: pendingBooking.pickupCoords,
-                    dropoffCoords: pendingBooking.dropoffCoords,
-                    pickupDate: pendingBooking.pickupDate,
-                    dropoffDate: pendingBooking.dropoffDate,
-                    pickupTime: pendingBooking.pickupTime,
-                    dropoffTime: pendingBooking.dropoffTime,
-                    totalDays: pendingBooking.totalDays,
-                    includeDriver: pendingBooking.includeDriver,
-                    totalPrice: pendingBooking.totalPrice,
-                    rentalType: pendingBooking.rentalType,
-                    paymentMethod: 'khalti',
-                    paymentStatus: 'paid',
-                    paymentInfo: {
-                        pidx: paymentData.pidx || pidx,
-                        transactionId: paymentData.transaction_id,
-                        amount: paymentData.total_amount,
-                        status: 'Paid',
-                        paidAt: new Date().toISOString()
-                    },
-                    status: 'confirmed'
-                })
+                status: 'confirmed'
             });
 
-            const bookingResult = await bookingResponse.json();
-            console.log('✅ Vehicle booking saved:', bookingResult);
+            console.log('✅ Vehicle booking saved:', bookingResponse.data);
 
-            if (bookingResult.success) {
+            if (bookingResponse.data.success) {
                 localStorage.removeItem('pendingVehicleBooking'); // 🧹 Clean up only if successful
 
                 // 🚀 Send notification after successful vehicle booking
@@ -124,30 +109,16 @@ const PaySuccess = () => {
 
                     console.log('📱 Vehicle booking notification data:', notificationData);
 
-                    const notificationResponse = await fetch('http://localhost:3000/api/notifications', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(notificationData),
-                        timeout: 10000, // 10 second timeout
-                    });
+                    const notificationResponse = await httpClient.post('http://localhost:3000/api/notifications', notificationData);
 
-                    if (notificationResponse.ok) {
-                        const notificationResult = await notificationResponse.json();
-                        console.log('✅ Vehicle booking notification created successfully:', notificationResult);
-                    } else {
-                        const errorText = await notificationResponse.text();
-                        console.error('❌ Vehicle booking notification failed:', errorText);
-                    }
+                    console.log('✅ Vehicle booking notification created successfully:', notificationResponse.data);
                 } catch (notificationError) {
                     console.error('❌ Failed to send vehicle booking notification:', notificationError);
                 }
 
                 return true;
             } else {
-                toast.error('Vehicle booking could not be saved: ' + bookingResult.message);
+                toast.error('Vehicle booking could not be saved: ' + bookingResponse.data.message);
                 return false;
             }
         } catch (error) {
