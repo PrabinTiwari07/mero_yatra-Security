@@ -49,9 +49,7 @@ const Login = () => {
 
     const handleTogglePassword = () => {
         setShowPassword((prev) => !prev);
-    };
-
-    const handleSubmit = async (e) => {
+    }; const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!formData.email || !formData.password) {
@@ -91,6 +89,8 @@ const Login = () => {
             });
 
             const data = await res.json();
+
+            // MFA check has been removed
 
             if (!res.ok) {
                 // Handle password expiry cases first
@@ -185,7 +185,7 @@ const Login = () => {
     return (
         <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 relative px-4 py-6">
             <ToastContainer />
-
+            {/* MFA verification has been removed */}
             <div className="w-full max-w-5xl h-[85vh] flex rounded-2xl overflow-hidden shadow-2xl bg-white">
                 <div className="w-1/2 flex flex-col justify-center items-center px-8 py-8">
                     <div className="flex flex-col items-center mb-6">
