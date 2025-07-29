@@ -3,8 +3,8 @@ const https = require('https');
 const fs = require('fs');
 
 const options = {
-    key: fs.readFileSync('server.key'), // replace it with your key path
-    cert: fs.readFileSync('server.crt'), // replace it with your certificate path
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.crt'),
 }
 
 https.createServer(options, (req, res) => {
