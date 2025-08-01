@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AboutUs from '../../components/aboutUs';
 import ChooseUs from '../../components/chooseUs';
-import ExploreNepal from '../../components/exploreNepal';
 import Footer from '../../components/footer';
 import Hero from '../../components/hero';
 import HowItWorks from '../../components/howItWorks';
@@ -15,7 +14,6 @@ const Home = () => {
     const { passwordStatus, loading } = usePasswordStatus();
     const navigate = useNavigate();
 
-    // Redirect to change password if expired
     useEffect(() => {
         if (passwordStatus && (passwordStatus.isExpired || passwordStatus.mustChangePassword)) {
             navigate('/forgot-password', {
@@ -33,7 +31,6 @@ const Home = () => {
     return (
         <div className="bg-gray-100">
             <Navbar />
-            {/* Password Warning Banner */}
             {!loading && passwordStatus && (
                 <PasswordWarningBanner
                     passwordStatus={passwordStatus}
@@ -43,7 +40,6 @@ const Home = () => {
             <HowItWorks />
             <Services showNavbar={false} standalone={false} />
             <ChooseUs />
-            <ExploreNepal />
             <AboutUs />
             <Footer />
         </div>
