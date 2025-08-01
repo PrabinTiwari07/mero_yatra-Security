@@ -4,19 +4,19 @@ const AboutUs = () => {
     const features = [
         {
             icon: <FaCheckCircle className="text-black" />,
-            text: "All types of vehicles — bikes, cars, jeeps, buses & more"
+            text: "Wide range of vehicles - cars, bikes, jeeps, and buses"
         },
         {
             icon: <FaShieldAlt className="text-black" />,
-            text: "Verified drivers and instant self-drive bookings"
+            text: "Safe and verified vehicles with trusted drivers"
         },
         {
             icon: <FaMapMarkerAlt className="text-black" />,
-            text: "Service coverage across Nepal"
+            text: "Available throughout Nepal"
         },
         {
             icon: <FaClock className="text-black" />,
-            text: "Transparent pricing and 24/7 support"
+            text: "Fair pricing and support anytime"
         }
     ];
 
@@ -28,7 +28,7 @@ const AboutUs = () => {
                         About Us
                     </h2>
                     <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                        Discover how we're reshaping travel across Nepal with our innovative vehicle rental platform.
+                        Making travel easy and affordable across Nepal.
                     </p>
                 </div>
 
@@ -37,7 +37,7 @@ const AboutUs = () => {
                         <div className="relative overflow-hidden rounded-lg">
                             <img
                                 src="/assets/bmw.jpg"
-                                alt="About YatriK"
+                                alt="About MeroYatra"
                                 className="w-full h-[400px] object-cover"
                             />
                         </div>
@@ -46,11 +46,11 @@ const AboutUs = () => {
                     <div>
                         <div className="bg-gray-50 rounded-lg p-8">
                             <h3 className="text-2xl font-bold text-gray-800 mb-6">
-                                Your Trusted Travel Partner in Nepal
+                                Your Travel Partner
                             </h3>
 
                             <p className="text-gray-700 mb-6 leading-relaxed">
-                                YatriK is a comprehensive platform for renting reliable vehicles — whether you're heading to the mountains, exploring the city, or planning a business trip. We make travel accessible and convenient for everyone.
+                                We help you rent vehicles easily. Whether you need a car for the city, a jeep for the mountains, or a bus for group travel, we have what you need.
                             </p>
 
                             <div className="space-y-4 mb-6">
@@ -70,8 +70,8 @@ const AboutUs = () => {
                             </div>
 
                             <p className="text-gray-700 leading-relaxed">
-                                We believe travel should be safe, flexible, and accessible for everyone — and that's exactly what
-                                <span className="font-semibold text-black"> YatriK</span> delivers.
+                                Travel should be simple and worry-free. That's what we offer at
+                                <span className="font-semibold text-black"> MeroYatra</span>.
                             </p>
                         </div>
                     </div>
