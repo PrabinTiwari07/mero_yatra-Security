@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
-import { FaBars, FaBell, FaTimes } from 'react-icons/fa';
+import { FaBars, FaTimes } from 'react-icons/fa';
 import { NavLink, useNavigate } from 'react-router-dom';
+import LogoutButton from './LogoutButton';
 
 const Navbar = () => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [userProfile, setUserProfile] = useState(null);
     const [profileImage, setProfileImage] = useState('/assets/profile.png');
     const navigate = useNavigate();
 
-    // Updated navItems to ensure consistency
     const navItems = ['Home', 'Services', 'Self Drive', 'Hire a Driver', 'Contact'];
 
     const routeMap = {
@@ -18,54 +17,12 @@ const Navbar = () => {
         'Contact': '/contact',
         'Self Drive': '/self-drive',
         'Hire a Driver': '/hire-driver',
-        'Services': '/services',  // Verified this route
+        'Services': '/services',
     };
 
     const toggleMenu = () => setMenuOpen(!menuOpen);
     const toggleProfile = () => setProfileOpen(!profileOpen);
 
-    // Fetch unread notifications count
-    useEffect(() => {
-        const fetchUnreadCount = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
-
-                const response = await fetch('http://localhost:3000/api/notifications', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.notifications) {
-                        const unread = data.notifications.filter(notif => !notif.isRead).length;
-                        setUnreadCount(unread);
-                    }
-                }
-            } catch (error) {
-                console.log('Error fetching notifications:', error);
-            }
-        };
-
-        fetchUnreadCount();
-
-        // Listen for notification updates from other components
-        const handleNotificationUpdate = () => {
-            fetchUnreadCount();
-        };
-
-        window.addEventListener('notificationUpdate', handleNotificationUpdate);
-
-        // Refresh count every 30 seconds for more real-time updates
-        const interval = setInterval(fetchUnreadCount, 30000);
-
-        return () => {
-            clearInterval(interval);
-            window.removeEventListener('notificationUpdate', handleNotificationUpdate);
-        };
-    }, []);
-
-    // Fetch user profile data including profile image
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
@@ -80,7 +37,6 @@ const Navbar = () => {
                     const data = await response.json();
                     setUserProfile(data.user);
 
-                    // Set profile image if available
                     if (data.user.profileImage) {
                         setProfileImage(`http://localhost:3000${data.user.profileImage}`);
                     }
@@ -93,33 +49,9 @@ const Navbar = () => {
         fetchUserProfile();
     }, []);
 
-    const handleNotificationClick = () => {
-        navigate('/notifications');
-        // Reset count when user opens notifications
-        setUnreadCount(0);
-    };
-
-    const handleLogout = () => {
-        // Clear all authentication data from localStorage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userRole');
-
-        // Optional: Clear all localStorage data
-        // localStorage.clear();
-
-        // Navigate to login page
-        navigate('/login');
-
-        // Close profile dropdown
-        setProfileOpen(false);
-    };
-
     return (
         <header className="sticky top-0 z-50 w-full px-4 py-4 bg-transparent backdrop-blur-md">
-
             <div className="bg-black text-white px-6 py-3 rounded-full shadow-xl flex items-center justify-between relative">
-                {/* Logo and Name */}
                 <div className="flex items-center gap-3">
                     <img
                         src="/assets/logo.png"
@@ -129,7 +61,6 @@ const Navbar = () => {
                     <span className="font-bold text-xl hidden sm:block">MeroYatra</span>
                 </div>
 
-                {/* Desktop Navigation */}
                 <nav className="hidden md:flex gap-6 lg:gap-10 text-sm font-semibold">
                     {navItems.map((item, i) => (
                         <NavLink
@@ -147,19 +78,7 @@ const Navbar = () => {
                     ))}
                 </nav>
 
-                {/* Right side: Bell, Profile, Hamburger */}
                 <div className="flex items-center gap-4 md:gap-6">
-                    {/* Bell Icon */}
-                    <div className="relative cursor-pointer group" onClick={handleNotificationClick}>
-                        <FaBell className="text-white/80 text-lg hover:text-white transition-all duration-200 group-hover:scale-110" />
-                        {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 border border-white rounded-full text-xs font-semibold text-white flex items-center justify-center animate-pulse shadow-sm">
-                                {unreadCount > 9 ? '9+' : unreadCount}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Profile Image */}
                     <div className="relative">
                         <img
                             src={profileImage}
@@ -173,7 +92,6 @@ const Navbar = () => {
                         />
                         {profileOpen && (
                             <div className="absolute right-0 mt-2 w-48 bg-white text-black shadow-lg rounded-md overflow-hidden z-50">
-                                {/* User Info Section */}
                                 <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                                     <div className="flex items-center space-x-3">
                                         <img
@@ -196,37 +114,30 @@ const Navbar = () => {
                                     </div>
                                 </div>
 
-                                {/* Menu Items */}
                                 <NavLink to="/profile" className="block px-4 py-2 hover:bg-gray-100">
                                     My Profile
                                 </NavLink>
-                                <NavLink to="/my-bookings" className="block px-4 py-2 hover:bg-gray-100">
-                                    Booking History
+                                <NavLink to="/session-settings" className="block px-4 py-2 hover:bg-gray-100">
+                                    Session Management
                                 </NavLink>
                                 <NavLink to="/change-password" className="block w-full text-left px-4 py-2 hover:bg-gray-100">
                                     Change Password
                                 </NavLink>
-                                <NavLink to="/help" className="block w-full text-left px-4 py-2 hover:bg-gray-100">
-                                    Help
-                                </NavLink>
-                                <button
-                                    onClick={handleLogout}
-                                    className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 border-t border-gray-200"
-                                >
-                                    Log Out
-                                </button>
+                                <LogoutButton
+                                    variant="dropdown-item"
+                                    className="border-t border-gray-200 text-red-600"
+                                    onLogoutSuccess={() => setProfileOpen(false)}
+                                />
                             </div>
                         )}
                     </div>
 
-                    {/* Hamburger for Mobile */}
                     <button className="md:hidden text-xl" onClick={toggleMenu}>
                         {menuOpen ? <FaTimes /> : <FaBars />}
                     </button>
                 </div>
             </div>
 
-            {/* Mobile Menu */}
             {menuOpen && (
                 <div className="md:hidden mt-2 bg-black text-white rounded-xl shadow-md px-4 py-3 space-y-3">
                     {navItems.map((item, i) => (
