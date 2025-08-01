@@ -13,7 +13,6 @@ const VerifyOtp = () => {
 
     const [resendLoading, setResendLoading] = useState(false);
 
-    // Restore missing handlers
     const handleChange = (index, value) => {
         if (!/^[0-9]?$/.test(value)) return;
         const newOtp = [...otp];
@@ -81,50 +80,67 @@ const VerifyOtp = () => {
     };
 
     return (
-        <div className="h-screen w-screen flex items-center justify-center bg-gray-100 relative px-4">
+        <div className="min-h-screen w-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 relative px-4 py-6">
             <ToastContainer />
 
             {error && (
-                <div className="absolute top-6 right-6 bg-red-800 text-white px-6 py-3 rounded-md shadow-lg font-medium z-10">
+                <div className="absolute top-6 right-6 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg font-medium z-10 border border-red-600">
                     {error}
                 </div>
             )}
 
-            <div className="bg-white rounded-lg shadow-xl p-10 w-full max-w-md text-center">
-                <h2 className="text-2xl font-bold mb-6">Enter OTP</h2>
-                <p className="mb-6 text-gray-600">Please check your email for the 4-digit verification code.</p>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="flex justify-center space-x-4">
-                        {otp.map((digit, index) => (
-                            <input
-                                key={index}
-                                type="text"
-                                maxLength="1"
-                                value={digit}
-                                onChange={(e) => handleChange(index, e.target.value)}
-                                onKeyDown={(e) => handleKeyDown(e, index)}
-                                ref={(el) => (inputRefs.current[index] = el)}
-                                className="w-12 h-12 text-center text-xl border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        ))}
+            <div className="w-full max-w-md">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+                    <div className="mb-8">
+                        <img src="/assets/logo.png" alt="YatriK Logo" className="h-16 mx-auto mb-4" />
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
+                        <p className="text-gray-600 text-sm">
+                            We've sent a 4-digit verification code to
+                        </p>
+                        <p className="text-gray-800 font-medium text-sm mt-1">{email}</p>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="w-48 bg-black text-white py-3 rounded-md font-semibold hover:bg-gray-900"
-                    >
-                        Verify
-                    </button>
-                </form>
-                <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={resendLoading}
-                    className={`mt-4 w-48 py-3 rounded-md font-semibold border border-black text-black bg-white hover:bg-gray-100 transition ${resendLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                    {resendLoading ? 'Resending...' : 'Resend OTP'}
-                </button>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="flex justify-center space-x-3">
+                            {otp.map((digit, index) => (
+                                <input
+                                    key={index}
+                                    type="text"
+                                    maxLength="1"
+                                    value={digit}
+                                    onChange={(e) => handleChange(index, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, index)}
+                                    ref={(el) => (inputRefs.current[index] = el)}
+                                    className="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50"
+                                />
+                            ))}
+                        </div>
+
+                        <div className="space-y-4">
+                            <button
+                                type="submit"
+                                className="w-full bg-black text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transform hover:scale-[1.02] transition-all duration-200 shadow-lg hover:shadow-xl"
+                            >
+                                Verify OTP
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleResendOtp}
+                                disabled={resendLoading}
+                                className={`w-full py-3 rounded-lg font-semibold border-2 border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transform hover:scale-[1.02] transition-all duration-200 ${resendLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-400'}`}
+                            >
+                                {resendLoading ? 'Resending...' : 'Resend OTP'}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                        <p className="text-sm text-gray-500">
+                            Didn't receive the code? Check your spam folder or try resending.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     );
